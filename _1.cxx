@@ -271,7 +271,7 @@ private:
 		_try_after_reallocate(newcap, [](auto){});}
 
 	CONSTEXPR std::tuple<pointer, pointer, pointer> _shift_forward(pointer pos, size_type n) {
-		const auto until_end = _end() - pos;
+		const size_type until_end = _end() - pos;
 		const auto constructions = std::min<size_type>(n, until_end); // number of constructions performed
 		// TODO: Make this more efficient. Can save a series of move assignments here
 		reserve(size() + n);
@@ -339,7 +339,6 @@ public:
 
 	template <typename... Args>
 	CONSTEXPR iterator emplace(const_iterator it, Args&&... args) {
-		auto p = cit_to_ptr(it);
 		if (it == end())  { // if we insert at the end, construct
 			if (size() < capacity()) 
 				_alloc_traits::construct(_alloc(), _end(), std::forward<Args>(args)...);
@@ -361,7 +360,7 @@ public:
 			detail::OnDestruction _([&]{_alloc_traits::destroy(_alloc(), &obj);});
 
 			pointer s_cons, e_cons, e;
-			std::tie(s_cons, e_cons, e) = _shift_forward(p, 1);
+			std::tie(s_cons, e_cons, e) = _shift_forward(cit_to_ptr(it), 1);
 			*s_cons = std::move(obj);
             return iterator{s_cons};
 		}
@@ -376,7 +375,7 @@ public:
 		for (auto p = cit_to_ptr(first); last != end();)
 			*p++ = std::move(*last++);
 		_end() -= length;
-		for (size_type i = 0; i < length; ++i)
+		for (difference_type i = 0; i < length; ++i)
 			_alloc_traits::destroy(_alloc(), _end() + i);
 
 		return iterator{cit_to_ptr(first)};
