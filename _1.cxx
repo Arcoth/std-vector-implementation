@@ -94,8 +94,8 @@ public:
 	explicit CONSTEXPR vector(allocator_type const& alloc) noexcept
 	  : _data(alloc, nullptr, nullptr, nullptr) {}
 
-	explicit CONSTEXPR vector(size_type count)
-	  : vector(alloc) {resize(count);}
+	explicit CONSTEXPR vector(size_type count) {
+        resize(count);}
 	CONSTEXPR vector(size_type count, const_reference val, allocator_type const& alloc = {})
 	  : vector(alloc) {
 		assign(count, val); }
@@ -341,10 +341,8 @@ public:
 	CONSTEXPR iterator emplace(const_iterator it, Args&&... args) {
 		auto p = cit_to_ptr(it);
 		if (it == end())  { // if we insert at the end, construct
-			if (size() < capacity()) {
+			if (size() < capacity()) 
 				_alloc_traits::construct(_alloc(), _end(), std::forward<Args>(args)...);
-				++_end();
-			}
 			else {
 				auto s = size();
 				// GCC ICEs here if the explicit capture is removed.
@@ -353,8 +351,8 @@ public:
 				// Apparently GCC has trouble with reference-capturing this?
 				_try_after_reallocate(s+1, [&, this] (auto new_begin) {
 					_alloc_traits::construct(_alloc(), new_begin+s, std::forward<Args>(args)...);});
-				++_end();
 			}
+			return _end()++;
 		}
 		else {
 			std::aligned_storage_t<sizeof(value_type), alignof(value_type)> storage;
@@ -365,6 +363,7 @@ public:
 			pointer s_cons, e_cons, e;
 			std::tie(s_cons, e_cons, e) = _shift_forward(p, 1);
 			*s_cons = std::move(obj);
+            return iterator{s_cons};
 		}
 	}
 	CONSTEXPR iterator insert(const_iterator it, const_reference val) {
